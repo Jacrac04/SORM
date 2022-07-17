@@ -136,7 +136,10 @@ class MetaModel(type):
         inst = super().__new__(cls, name, bases, attrs)
         inst.manager = cls._get_manager(cls)
         inst.table_name = name.lower()
-        print(attrs)
+        for attr in attrs:
+            if attr.startswith('_'):
+                continue
+            print(attr)
         return inst
     
     def _get_manager(cls):

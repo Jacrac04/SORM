@@ -65,10 +65,10 @@ class Condition:
                 sql_format_parts.append(f'{field} {operation_str} {f_obj.sql_format}')
             elif isinstance(value, list):
                 vars_list = value
-                sql_format_parts.append(f'{field} {operation_str} ({", ".join(["%s"]*len(vars_list))})')
+                sql_format_parts.append(f'{field} {operation_str} ({", ".join(["?"]*len(vars_list))})')
                 self.query_vars += vars_list
             else:
-                sql_format_parts.append(f'{field} {operation_str} %s')
+                sql_format_parts.append(f'{field} {operation_str} ?')
                 self.query_vars.append(value)
         self.sql_format = ' AND '.join(sql_format_parts)
 
@@ -85,10 +85,13 @@ class Condition:
         return condition_resulting
 
 
+
+
 class Field:
     def __init__(self, name, data_type):
         self.name = name
         self.data_type = data_type
+        self.value = None
     
     def setValue(self, value):
         print(f"Setting value {value} to field {self.name}")
@@ -100,7 +103,8 @@ class Field:
             return self
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.name} ({self.data_type})>"
+        return f"<{self.__class__.__name__}: {self.name} ({self.data_type})  -  {self.value}>"
+
     
 # Class for backreference Field
 class BackrefField(Field):
@@ -132,3 +136,32 @@ class ForeignKeyField(Field):
         self.backref_field.back_populates = self.back_populates
         self.backref_field.backref_field = self
         return self.backref_field
+    
+    def setValue(self, value):
+        return self.back_populates.objects.query(id = value)[0]
+    
+    
+class Relationship():
+    # def __init__(self, name, )
+    pass
+
+class InstrumentedAttribute:
+    def __init__(self, name, data_type):
+        self.name = name
+        # self.data_type = data_type
+        self.value = None
+    
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.name} ({self.data_type})  -  {self.value}>"
+    
+    def __get__(self, instance, owner):
+        # print(instance, instance.__dict__)
+        return instance.__dict__[self.name]
+    
+    def __set__(self, instance, value):
+        print(f"Setting value {value} to field {self.name}, {instance.initialized}")
+        instance.__dict__[self.name] = value
+        if not instance.initialized:
+            return instance        
+        instance.__class__.objects.updateOne({self.name: value}, id = instance.id)
+        return instance

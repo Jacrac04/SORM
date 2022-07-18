@@ -8,7 +8,7 @@ import itertools
 
 import sqlite3
 
-from utils import Field
+from utils import Field, BackrefField, ForeignKeyField, Relationship, InstrumentedAttribute, F, Condition
 
 
 class BaseManager:
@@ -27,7 +27,10 @@ class BaseManager:
     @classmethod
     def _execute_query(cls, query, vars):
         cursor = cls._get_cursor()
-        cursor.execute(query, vars)
+        if vars:
+            cursor.execute(query, vars)
+        else:
+            cursor.execute(query)
 
     def __init__(self, model_class):
         self.model_class = model_class
@@ -80,8 +83,6 @@ class BaseManager:
         return model_objects
 
     def bulk_insert(self, data):
-        # Get fields to insert [fx, fy, fz] and set values in this format [(x1, y1, z1), (x2, y2, z2), ... ] to
-        # facilitate the INSERT query building
         field_names = data[0].keys()
         values = list()
         for row in data:
@@ -116,6 +117,15 @@ class BaseManager:
 
         # Execute query
         self._execute_query(query, vars)
+        
+    def updateOne(self,changedData, id):
+        dataToChange = ''
+        for key, value in changedData.items():
+            dataToChange += f'{key} = \'{value}\','
+        dataToChange = dataToChange[:-1]
+        
+        query = f"UPDATE {self.table_name} SET {dataToChange} WHERE id = {id}"
+        self._execute_query(query, None)
 
     def delete(self, condition=None):
         # Build DELETE query
@@ -137,9 +147,12 @@ class MetaModel(type):
         inst.manager = cls._get_manager(cls)
         inst.table_name = name.lower()
         for attr in attrs:
-            if attr.startswith('_'):
+            if attr.startswith('_') or not (isinstance(attrs[attr], Field)):
                 continue
-            print(attr)
+            # print(attr)
+            x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type)
+            setattr(inst, attr, x)
+            pass
         return inst
     
     def _get_manager(cls):
@@ -150,16 +163,23 @@ class MetaModel(type):
         return cls._get_manager()
 
 
+
 class BaseModel(metaclass=MetaModel):
     table_name = ""
 
     def __init__(self, **row_data):
-        print(row_data)
+        # print(row_data)
         # for type(self).
+        self.initialized = False
         for field_name, value in row_data.items():
-            setattr(self, field_name, getattr(self, field_name).setValue(value))
-            print(getattr(self, field_name))
+            # setattr(self, field_name, getattr(self, field_name))
+            setattr(self, field_name, value)
+            
+            # print(getattr(self, field_name))
             # setattr(self, field_name, value)
+        self.initialized = True
+
+        
 
     def __repr__(self):
         attrs_format = ", ".join([f'{field}={value}' for field, value in self.__dict__.items()])
@@ -169,90 +189,6 @@ class BaseModel(metaclass=MetaModel):
     def get_fields(cls):
         return cls._get_manager()._get_fields()
 
-class F:
-    ADD = '+'
-    SUB = '-'
-    MUL = '*'
-    DIV = '/'
-
-    def __init__(self, field_name=None):
-        self.sql_format = field_name
-        
-    def __add__(self, other):
-        return self._combine(other, operator=self.ADD)
-
-    def __radd__(self, other):
-        return self._combine(other, operator=self.ADD, is_reversed=True)
-
-    def __sub__(self, other):
-        return self._combine(other, operator=self.SUB)
-
-    def __rsub__(self, other):
-        return self._combine(other, operator=self.SUB, is_reversed=True)
-
-    def __mul__(self, other):
-        return self._combine(other, operator=self.MUL)
-
-    def __rmul__(self, other):
-        return self._combine(other, operator=self.MUL, is_reversed=True)
-
-    def __truediv__(self, other):
-        return self._combine(other, operator=self.DIV)
-
-    def __rtruediv__(self, other):
-        return self._combine(other, operator=self.DIV, is_reversed=True)
-
-    def _combine(self, other, operator, is_reversed=False):
-        f_obj = F()
-        part_left = self.sql_format
-        part_right = other.sql_format if isinstance(other, F) else other
-        if is_reversed:
-            part_left, part_right = part_right, part_left
-        f_obj.sql_format = f'{part_left} {operator} {part_right}'
-        return f_obj
-
-class Condition:
-    operations_map = {
-        'eq': '=',
-        'lt': '<',
-        'lte': '<=',
-        'gt': '>',
-        'gte': '>=',
-        'in': 'IN'
-    }
-
-    def __init__(self, **kwargs):
-        sql_format_parts = list()
-        self.query_vars = list()
-        for expr, value in kwargs.items():
-            if '__' not in expr:
-                expr += '__eq'
-            field, operation_expr = expr.split('__')
-            operation_str = self.operations_map[operation_expr]
-
-            if isinstance(value, F):
-                f_obj = value
-                sql_format_parts.append(f'{field} {operation_str} {f_obj.sql_format}')
-            elif isinstance(value, list):
-                vars_list = value
-                sql_format_parts.append(f'{field} {operation_str} ({", ".join(["?"]*len(vars_list))})')
-                self.query_vars += vars_list
-            else:
-                sql_format_parts.append(f'{field} {operation_str} ?')
-                self.query_vars.append(value)
-        self.sql_format = ' AND '.join(sql_format_parts)
-
-    def __or__(self, other):
-        return self._merge_with(other, logical_operator='OR')
-
-    def __and__(self, other):
-        return self._merge_with(other, logical_operator='AND')
-
-    def _merge_with(self, other, logical_operator='AND'):
-        condition_resulting = Condition()
-        condition_resulting.sql_format = f"({self.sql_format}) {logical_operator} ({other.sql_format})"
-        condition_resulting.query_vars = self.query_vars + other.query_vars
-        return condition_resulting
 
 
     
@@ -275,16 +211,19 @@ BaseManager.set_connection(database_settings={
     'password': 'yannick'
 })
 # ----------------------- Usage ----------------------- #
+
+    
+class Referance(BaseModel):
+    id = Field('id', data_type='int')
+    empref = Field('empref', data_type='int')
+    # children = Relationship('Referance', 'children', backref='Employee')
+    
 class Employee(BaseModel):
     id = Field('id', data_type='int')
     first_name = Field('first_name', data_type='varchar')
     last_name = Field('last_name', data_type='varchar')
     salary = Field('salary', data_type='int')
-    
-    
-class ReferanceTable(BaseModel):
-    table_name = "referance_table"
-    manager_class = BaseManager 
+    ref = ForeignKeyField('ref', data_type='int', back_populates=Referance)
 
 
 # print(Employee.get_fields())
@@ -302,8 +241,10 @@ employees_data = [
 
 # SQL: SELECT salary, grade FROM employees;
 # employees = Employee.objects.select('*', condition=Condition(first_name="Pythonista"))  # employees: List[Employee]
-employees = Employee.objects.query(first_name="Pythonista")
-print(employees[0].first_name, employees[0].id  , employees[0].salary)
+employees = Employee.objects.query(ref="1")
+print(employees)
+print(employees[0].first_name, employees[1].first_name  , employees[0].salary, employees[0].ref)
+employees[0].first_name = "Yannick"
 pass
 
 

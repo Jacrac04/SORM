@@ -4,6 +4,7 @@ import re
 import sqlite3
 import itertools
 import sqlite3
+from tkinter.tix import COLUMN
 from utils import Field, BackrefField, ForeignKeyField, Relationship, InstrumentedAttribute, F, Condition, InstrumentedAttributeRelationship
 
 
@@ -74,7 +75,7 @@ class BaseManager:
             rows = cursor.fetchmany(size=chunk_size)
             for row in rows:
                 row_data = dict(zip(field_names, row))
-                model_objects.append(self.model_class(**row_data))
+                model_objects.append(self.model_class(new_record=False,**row_data))
             is_fetching_completed = len(rows) < chunk_size
 
         return model_objects
@@ -134,6 +135,24 @@ class BaseManager:
 
         # Execute query
         self._execute_query(query, vars)
+    
+    def newRecord(self, data):
+        columns = ''
+        values = ''
+        for key, value in data.items():
+            columns += f'{key}, '
+            values += f'\'{value}\', '
+        columns = columns[:-2]
+        values = values[:-2]
+        query = f"INSERT INTO {self.table_name} ({columns}) VALUES ({values})"
+        print(query)
+        cursor = self._get_cursor()
+        cursor.execute(query)
+        id = cursor.lastrowid
+        return id
+        
+        
+        
 
 def testfunc(string1:str):
     return exec()
@@ -153,8 +172,8 @@ class MetaModel(type):
             # print(attr)
                 x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type)
             elif isinstance(attrs[attr], Relationship):
-                # x = InstrumentedAttributeRelationship(attrs[attr].parentcls, attrs[attr].back_populates)
-                pass
+                x = InstrumentedAttributeRelationship(attrs[attr].parentcls, attrs[attr].back_populates)
+                
             setattr(inst, attr, x)
             pass
         return inst
@@ -171,11 +190,14 @@ class MetaModel(type):
 class BaseModel(metaclass=MetaModel):
     table_name = ""
 
-    def __init__(self, **row_data):
+    def __init__(self, new_record=True, **data):
         # print(row_data)
         # for type(self).
         self.initialized = False
-        for field_name, value in row_data.items():
+        if new_record:
+            id = self.__class__.objects.newRecord(data)
+            data.update({'id':id})
+        for field_name, value in data.items():
             # setattr(self, field_name, getattr(self, field_name))
             setattr(self, field_name, value)
             

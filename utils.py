@@ -157,14 +157,14 @@ class InstrumentedAttributeRelationship():
         if instance is None:
             return self
         print(self, instance, owner)
-        print(exec(self.parentcls))
-        return 1
+        # print(exec(self.parentcls))
+        return relationshipfunc
     def __set__(self, instance, value):
         pass
       
-def relationship(parentcls, back_populates):
+def relationshipfunc(parentcls):
     # return 
-    return Relationship(parentcls, back_populates)
+    return exec(parentcls)
 
 
 
@@ -180,7 +180,11 @@ class InstrumentedAttribute:
     
     def __get__(self, instance, owner):
         # print(instance, instance.__dict__)
-        return instance.__dict__[self.name]
+        try:
+            return instance.__dict__[self.name]
+        except KeyError:
+            print(f"KeyError: {self.name} not found in {instance.__dict__}")
+            return None
     
     def __set__(self, instance, value):
         print(f"Setting value {value} to field {self.name}, {instance.initialized}")

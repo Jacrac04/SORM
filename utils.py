@@ -142,8 +142,32 @@ class ForeignKeyField(Field):
     
     
 class Relationship():
-    # def __init__(self, name, )
-    pass
+    def __init__(self, parentcls, back_populates):
+        self.parentcls = parentcls
+        self.back_populates = back_populates
+        # self.backref_field = parentcls.__dict__[back_populates]
+    
+class InstrumentedAttributeRelationship():
+    def __init__(self, parentcls, back_populates):
+        self.parentcls = parentcls
+        self.back_populates = back_populates
+        # self.backref_field = parentcls.__dict__[back_populates]
+    
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        print(self, instance, owner)
+        print(exec(self.parentcls))
+        return 1
+    def __set__(self, instance, value):
+        pass
+      
+def relationship(parentcls, back_populates):
+    # return 
+    return Relationship(parentcls, back_populates)
+
+
+
 
 class InstrumentedAttribute:
     def __init__(self, name, data_type):

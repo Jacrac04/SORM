@@ -65,6 +65,7 @@ class BaseManager:
 
         # Execute query
         cursor = self._get_cursor()
+        print(query,vars)
         cursor.execute(query, vars)
 
         # Fetch data obtained with the previous query execution and transform it into `model_class` objects.
@@ -159,6 +160,7 @@ def testfunc(string1:str):
 
 class MetaModel(type):
     manager_class = BaseManager
+    models = {}
 
     def __new__(cls, name, bases, attrs):
         inst = super().__new__(cls, name, bases, attrs)
@@ -172,10 +174,11 @@ class MetaModel(type):
             # print(attr)
                 x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type)
             elif isinstance(attrs[attr], Relationship):
-                x = InstrumentedAttributeRelationship(attrs[attr].parentcls, attrs[attr].back_populates)
-                
+                # x = InstrumentedAttributeRelationship(attrs[attr].parentcls, attrs[attr].back_populates)
+                x = property(fget=lambda self: MetaModel.models[attrs[attr].parentcls].objects.query(ref=self.id))
             setattr(inst, attr, x)
             pass
+        MetaModel.models[name] = inst
         return inst
     
     def _get_manager(cls):

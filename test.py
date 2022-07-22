@@ -277,14 +277,15 @@ class Employee(db.Model):
     
 
 
-# employees = Employee.objects.query(ref="1")
-# print(employees)
-# print(employees[0].first_name, employees[1].first_name  , employees[0].salary, employees[0].ref)
-# # employees[0].first_name = "Yannick"
+employees = Employee.objects.query(ref="1")
+print(employees)
+print(employees[0].first_name, employees[1].first_name  , employees[0].salary, employees[0].ref)
+# employees[0].first_name = "Yannick"
 referances = Referance.objects.query(id=1)
 print(referances[0])
-x = referances[0].children('Employee')
+x = referances[0].children
 print(x)
+
 # newEmp = Employee(first_name="Yannick", last_name="KIKI", salary=1320000)
 # print(newEmp.id, newEmp.first_name, newEmp.last_name, newEmp.salary, newEmp.ref)
 pass

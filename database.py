@@ -5,8 +5,8 @@ import sqlite3
 import itertools
 import sqlite3
 from tkinter.tix import COLUMN
-from utils import Field, BackrefField, ForeignKeyField, Relationship, InstrumentedAttribute, F, Condition, InstrumentedAttributeRelationship
-
+from utils import Blank, Field, ForeignKeyField, Relationship, InstrumentedAttribute, F, Condition, InstrumentedAttributeRelationship
+from types import MethodType
 
 class BaseManager:
     connection = None
@@ -44,7 +44,7 @@ class BaseManager:
         )
         return [Field(name=row[0], data_type=row[1]) for row in cursor.description]
     
-    def query(self, **kwargs):
+    def filter_by(self, **kwargs):
         # Execute query
         # self.select('*', condition=Condition(**kwargs))
         return self.select('*', condition=Condition(**kwargs))
@@ -76,7 +76,11 @@ class BaseManager:
             rows = cursor.fetchmany(size=chunk_size)
             for row in rows:
                 row_data = dict(zip(field_names, row))
-                model_objects.append(self.model_class(new_record=False,**row_data))
+                x = Blank() # Create a blank object
+                self.model_class.__bases__[0].__init__(x, new_record=False,**row_data) # Call the parent init on the blank object
+                x.__class__ = self.model_class 
+                # model_objects.append(self.model_class(new_record=False,**row_data))
+                model_objects.append(x)
             is_fetching_completed = len(rows) < chunk_size
 
         return model_objects
@@ -158,24 +162,43 @@ class BaseManager:
 def testfunc(string1:str):
     return exec()
 
+
+
+def _wrap(func, args, kwargs):
+    print('fdfdfdfd', func, args, kwargs)
+    if type(func) == MethodType:
+        result = func( *args, **kwargs)
+    else:
+        result = func(*args, **kwargs)
+    args[0].id = args[0].__class__.query.newRecord(kwargs)
+    return result
+
 class MetaModel(type):
     manager_class = BaseManager
     models = {}
+
+        
 
     def __new__(cls, name, bases, attrs):
         inst = super().__new__(cls, name, bases, attrs)
         inst.manager = cls._get_manager(cls)
         inst.table_name = name.lower()
         for attr in attrs:
-            
-            if attr.startswith('_') or (not (isinstance(attrs[attr], Field) or isinstance(attrs[attr], Relationship))):
+            print(attr)
+            if (attr.startswith('_') and not attr.startswith('__init_')) or (not attr.startswith('__init_') and (not (isinstance(attrs[attr], Field) or isinstance(attrs[attr], Relationship)))):
+                print(attr)
                 continue
             elif isinstance(attrs[attr], Field):
             # print(attr)
                 x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type)
             elif isinstance(attrs[attr], Relationship):
-                # x = InstrumentedAttributeRelationship(attrs[attr].parentcls, attrs[attr].back_populates)
-                x = property(fget=lambda self: MetaModel.models[attrs[attr].parentcls].objects.query(ref=self.id))
+                x = property(fget=lambda self: MetaModel.models[attrs[attr].parentcls].query.filter_by(ref=self.id))
+            elif attr == '__init__':
+                if name != 'BaseModel':
+                    x = lambda *args, **kwargs: _wrap(attrs[attr], args, kwargs)
+                    print('herre', attr, attrs[attr], x)
+                else:
+                    continue
             setattr(inst, attr, x)
             pass
         MetaModel.models[name] = inst
@@ -185,9 +208,17 @@ class MetaModel(type):
         return cls.manager_class(model_class=cls)
 
     @property
-    def objects(cls):
+    def query(cls):
         return cls._get_manager()
 
+    # def __call__(cls, *args, **kwargs):
+    #     if 'new_record' in kwargs:
+    #         if not kwargs['new_record']:
+    #             # return cls.manager.newRecord(kwargs)
+    #             x = super()
+    #             y = x.__call__(*args, **kwargs)
+    #             return y
+    #     return cls.__new__(cls)
 
 
 class BaseModel(metaclass=MetaModel):
@@ -198,7 +229,23 @@ class BaseModel(metaclass=MetaModel):
         # for type(self).
         self.initialized = False
         if new_record:
-            id = self.__class__.objects.newRecord(data)
+            id = self.__class__.query.newRecord(data)
+            data.update({'id':id})
+        for field_name, value in data.items():
+            # setattr(self, field_name, getattr(self, field_name))
+            setattr(self, field_name, value)
+            
+            # print(getattr(self, field_name))
+            # setattr(self, field_name, value)
+        self.initialized = True
+        
+    # Really bad solution for when we want to load an existing piece of data as we need to use this init method over the user defined one. 
+    def init2(self, new_record=True, **data):
+        # print(row_data)
+        # for type(self).
+        self.initialized = False
+        if new_record:
+            id = self.__class__.query.newRecord(data)
             data.update({'id':id})
         for field_name, value in data.items():
             # setattr(self, field_name, getattr(self, field_name))
@@ -217,45 +264,6 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def get_fields(cls):
         return cls._get_manager()._get_fields()
-
-
-
-    
-# ----------------------- Setup ----------------------- #
-# DB_SETTINGS = {
-#     'host': '127.0.0.1',
-#     'port': '5432',
-#     'database': 'ormify',
-#     'user': 'yank',
-#     'password': 'yank'
-# }
-
-# BaseManager.database_settings = DB_SETTINGS
-
-# BaseManager.set_connection(database_settings={
-#     'host': '127.0.0.1',
-#     'port': '5432',
-#     'database': 'pgtest',
-#     'user': 'yannick',
-#     'password': 'yannick'
-# })
-# ----------------------- Usage ----------------------- #
-
-    
-# class Referance(BaseModel):
-#     id = Field('id', data_type='int')
-#     empref = Field('empref', data_type='int')
-#     children = Relationship('Employee', 'ref')
-    
-# class Employee(BaseModel):
-#     id = Field('id', data_type='int')
-#     first_name = Field('first_name', data_type='varchar')
-#     last_name = Field('last_name', data_type='varchar')
-#     salary = Field('salary', data_type='int')
-#     ref = ForeignKeyField('ref', data_type='int', back_populates=Referance)
-
-
- 
         
 class ORM():
     def __init__(self):
@@ -270,20 +278,3 @@ class ORM():
         self.Relationship = Relationship
         
         
-# def _set_default_query_class(d, cls):
-#     if 'query_class' not in d:
-#         d['query_class'] = cls
-
-
-# def _wrap_with_default_query_class(fn, cls):
-#     @functools.wraps(fn)
-#     def newfn(*args, **kwargs):
-#         _set_default_query_class(kwargs, cls)
-#         if "backref" in kwargs:
-#             backref = kwargs['backref']
-#             if isinstance(backref, string_types):
-#                 backref = (backref, {})
-#             _set_default_query_class(backref[1], cls)
-#         return fn(*args, **kwargs)
-#     return newfn
-

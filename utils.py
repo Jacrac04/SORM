@@ -131,11 +131,11 @@ class ForeignKeyField(Field):
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.name} ({self.data_type})>"
 
-    def set_backref_field(self, backref_field):
-        self.backref_field = backref_field
-        self.backref_field.back_populates = self.back_populates
-        self.backref_field.backref_field = self
-        return self.backref_field
+    # def set_backref_field(self, backref_field):
+    #     self.backref_field = backref_field
+    #     self.backref_field.back_populates = self.back_populates
+    #     self.backref_field.backref_field = self
+    #     return self.backref_field
     
     def setValue(self, value):
         return self.back_populates.objects.query(id = value)[0]
@@ -167,6 +167,8 @@ def relationshipfunc(parentcls):
     return exec(parentcls)
 
 
+class Blank():
+    pass
 
 
 class InstrumentedAttribute:
@@ -187,9 +189,13 @@ class InstrumentedAttribute:
             return None
     
     def __set__(self, instance, value):
-        print(f"Setting value {value} to field {self.name}, {instance.initialized}")
+        try:
+            inited = instance.initialized
+        except AttributeError:
+            inited = False
+        print(f"Setting value {value} to field {self.name}, {inited}")
         instance.__dict__[self.name] = value
-        if not instance.initialized:
+        if not inited:
             return instance        
         instance.__class__.objects.updateOne({self.name: value}, id = instance.id)
         return instance

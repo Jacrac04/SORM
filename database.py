@@ -8,12 +8,15 @@ from tkinter.tix import COLUMN
 from utils import Blank, Field, ForeignKeyField, Relationship, InstrumentedAttribute, F, Condition, InstrumentedAttributeRelationship
 from types import MethodType
 
+import re
+
+
 class BaseManager:
     connection = None
 
     @classmethod
     def set_connection(cls, database_settings):
-        connection = sqlite3.connect("test.db", isolation_level=None)
+        connection = sqlite3.connect("dev.sqlite", isolation_level=None)
         # connection.autocommit = True
         cls.connection = connection
 
@@ -31,7 +34,6 @@ class BaseManager:
 
     def __init__(self, model_class):
         self.model_class = model_class
-        print(self.model_class)
         
     @property
     def table_name(self):
@@ -65,7 +67,6 @@ class BaseManager:
 
         # Execute query
         cursor = self._get_cursor()
-        print(query,vars)
         cursor.execute(query, vars)
 
         # Fetch data obtained with the previous query execution and transform it into `model_class` objects.
@@ -164,13 +165,10 @@ def testfunc(string1:str):
 
 
 
-def _wrap(func, args, kwargs):
-    print('fdfdfdfd', func, args, kwargs)
-    if type(func) == MethodType:
-        result = func( *args, **kwargs)
-    else:
-        result = func(*args, **kwargs)
-    args[0].id = args[0].__class__.query.newRecord(kwargs)
+def _wrapCustomInit(baseInit, self, data):
+    result = baseInit(*self, **data)
+    pk = self[0].__class__.primary_key
+    self[0].__dict__[pk] = self[0].__class__.query.newRecord(data)
     return result
 
 class MetaModel(type):
@@ -182,21 +180,21 @@ class MetaModel(type):
     def __new__(cls, name, bases, attrs):
         inst = super().__new__(cls, name, bases, attrs)
         inst.manager = cls._get_manager(cls)
-        inst.table_name = name.lower()
+        name = re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+        print(name) 
+        inst.table_name = name
         for attr in attrs:
-            print(attr)
             if (attr.startswith('_') and not attr.startswith('__init_')) or (not attr.startswith('__init_') and (not (isinstance(attrs[attr], Field) or isinstance(attrs[attr], Relationship)))):
-                print(attr)
                 continue
             elif isinstance(attrs[attr], Field):
-            # print(attr)
-                x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type)
+                if attrs[attr].primary_key:
+                    inst.primary_key = attr
+                x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type, attrs[attr].primary_key)
             elif isinstance(attrs[attr], Relationship):
-                x = property(fget=lambda self: MetaModel.models[attrs[attr].parentcls].query.filter_by(ref=self.id))
+                x = property(fget=lambda self: MetaModel.models[re.sub(r'(?<!^)(?=[A-Z])', '_', attrs[attr].parentcls).lower()].query.filter_by(ref=self.id))
             elif attr == '__init__':
-                if name != 'BaseModel':
-                    x = lambda *args, **kwargs: _wrap(attrs[attr], args, kwargs)
-                    print('herre', attr, attrs[attr], x)
+                if name != 'base_model':
+                    x = lambda *args, **kwargs: _wrapCustomInit(attrs[attr], args, kwargs)
                 else:
                     continue
             setattr(inst, attr, x)
@@ -211,51 +209,21 @@ class MetaModel(type):
     def query(cls):
         return cls._get_manager()
 
-    # def __call__(cls, *args, **kwargs):
-    #     if 'new_record' in kwargs:
-    #         if not kwargs['new_record']:
-    #             # return cls.manager.newRecord(kwargs)
-    #             x = super()
-    #             y = x.__call__(*args, **kwargs)
-    #             return y
-    #     return cls.__new__(cls)
-
 
 class BaseModel(metaclass=MetaModel):
     table_name = ""
 
     def __init__(self, new_record=True, **data):
-        # print(row_data)
-        # for type(self).
         self.initialized = False
         if new_record:
-            id = self.__class__.query.newRecord(data)
-            data.update({'id':id})
+            # id = self.__class__.query.newRecord(data)
+            pk = self.__class__.primary_key
+            pkdata = self.__class__.query.newRecord(data)
+            data.update({pk:pkdata})
         for field_name, value in data.items():
-            # setattr(self, field_name, getattr(self, field_name))
             setattr(self, field_name, value)
-            
-            # print(getattr(self, field_name))
-            # setattr(self, field_name, value)
         self.initialized = True
-        
-    # Really bad solution for when we want to load an existing piece of data as we need to use this init method over the user defined one. 
-    def init2(self, new_record=True, **data):
-        # print(row_data)
-        # for type(self).
-        self.initialized = False
-        if new_record:
-            id = self.__class__.query.newRecord(data)
-            data.update({'id':id})
-        for field_name, value in data.items():
-            # setattr(self, field_name, getattr(self, field_name))
-            setattr(self, field_name, value)
-            
-            # print(getattr(self, field_name))
-            # setattr(self, field_name, value)
-        self.initialized = True
-
-        
+ 
 
     def __repr__(self):
         attrs_format = ", ".join([f'{field}={value}' for field, value in self.__dict__.items()])

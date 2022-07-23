@@ -88,16 +88,16 @@ class Condition:
 
 
 class Field:
-    def __init__(self, name, data_type):
+    def __init__(self, name, data_type, primary_key=False):
         self.name = name
         self.data_type = data_type
         self.value = None
+        self.primary_key = primary_key
     
     def setValue(self, value):
         print(f"Setting value {value} to field {self.name}")
         if self.data_type == 'int':
             return value
-            print(f"Value {value} converted to int: {self}")
         else:
             self.value = value
             return self
@@ -156,8 +156,6 @@ class InstrumentedAttributeRelationship():
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        print(self, instance, owner)
-        # print(exec(self.parentcls))
         return relationshipfunc
     def __set__(self, instance, value):
         pass
@@ -172,16 +170,15 @@ class Blank():
 
 
 class InstrumentedAttribute:
-    def __init__(self, name, data_type):
+    def __init__(self, name, data_type, primary_key):
         self.name = name
-        # self.data_type = data_type
         self.value = None
+        self.primary_key = primary_key
     
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.name} ({self.data_type})  -  {self.value}>"
     
     def __get__(self, instance, owner):
-        # print(instance, instance.__dict__)
         try:
             return instance.__dict__[self.name]
         except KeyError:
@@ -189,6 +186,8 @@ class InstrumentedAttribute:
             return None
     
     def __set__(self, instance, value):
+        if self.primary_key:
+            raise Exception("Cannot set primary key")
         try:
             inited = instance.initialized
         except AttributeError:

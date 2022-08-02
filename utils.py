@@ -1,3 +1,6 @@
+from codecs import backslashreplace_errors
+
+
 class F:
     ADD = '+'
     SUB = '-'
@@ -140,13 +143,25 @@ class ForeignKeyField(Field):
     def setValue(self, value):
         return self.back_populates.objects.query(id = value)[0]
     
+class ForeignKey():
+    def __init__(self, key) -> None:
+        self.key = key 
     
 class Relationship():
     def __init__(self, parentcls, back_populates):
         self.parentcls = parentcls
         self.back_populates = back_populates
         # self.backref_field = parentcls.__dict__[back_populates]
-    
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.parentcls} ({self.back_populates})>"
+class NewRelationship():
+    def __init__(self, childcls, back_populates=None):
+        self.childcls = childcls
+        self.back_populates = back_populates
+        # self.backref_field = parentcls.__dict__[back_populates]
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.childcls} ({self.back_populates})>"   
+
 class InstrumentedAttributeRelationship():
     def __init__(self, parentcls, back_populates):
         self.parentcls = parentcls
@@ -176,7 +191,7 @@ class InstrumentedAttribute:
         self.primary_key = primary_key
     
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.name} ({self.data_type})  -  {self.value}>"
+        return f"<{self.__class__.__name__}: {self.name} ({self.primary_key})  -  {self.value}>"
     
     def __get__(self, instance, owner):
         try:

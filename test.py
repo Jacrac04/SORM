@@ -7,12 +7,12 @@ def uuidGen():
     return str(uuid.uuid4())
 
 class Referance(db.Model):
-    id = db.Field('id', data_type='int')
+    id = db.Field('id', data_type='int', primary_key=True)
     empref = db.Field('empref', data_type='int')
     children = db.Relationship('Employee', 'ref')
     
 class Employee(db.Model):
-    id = db.Field('id', data_type='int')
+    id = db.Field('id', data_type='int', primary_key=True)
     first_name = db.Field('first_name', data_type='varchar')
     last_name = db.Field('last_name', data_type='varchar')
     salary = db.Field('salary', data_type='int')
@@ -38,38 +38,4 @@ print(x)
 newEmp = Employee(first_name="Yannick", last_name="KIKI", salary=1320000)
 print(newEmp.id, newEmp.first_name, newEmp.last_name, newEmp.salary, newEmp.ref)
 
-pass
-
-# class class1:
-#     def __init__(self, name, age):
-#         self.name = name
-#         self.age = age
-#         print('Init 1')
-    
-    
-# class class2(class1):
-#     def __init__(self, name):
-#         self.name = name
-#         # super().__init__(name)
-#         print('Init 2')
-        
-#     def bar(self):
-#         print('bar')
-
-# class Blank():
-#     pass
-
-# # Class2 Initiation With Normal Init
-# x = class2('NameValue1')
-# print(x.name)
-# x.bar()
-
-# # Class2 Initiation With Parent Init
-# y = Blank() # Create a blank object
-# class2.__bases__[0].__init__(y, 'NameValue2', 17) # Call the parent init on the blank object
-# y.__class__ = class2 # Change the class of the blank object to class2
-# print(y.name, y.age)
-# y.bar()
-
- 
 pass

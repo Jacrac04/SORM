@@ -215,15 +215,22 @@ class MetaModel(type):
                         if string1 in MetaModel.models[string2].foreign_keys:
                             return MetaModel.models[childcls].query.filter_by(**{'id':getattr(self, self.foreign_keys[string1])})[0]
                         else:
-                            return MetaModel.models[childcls].query.filter_by(**{MetaModel.models[childcls].foreign_keys[re.sub(r'(?<!^)(?=[A-Z])', '_', (str(self.__class__.__name__))).lower()+ ".id"]:self.id}))
+                            return MetaModel.models[childcls].query.filter_by(**{MetaModel.models[childcls].foreign_keys[re.sub(r'(?<!^)(?=[A-Z])', '_', (str(self.__class__.__name__))).lower()+ ".id"]:self.id})
                     def fset(self, value, string1=string1, string2=string2, childcls=childcls):
+                        print(self, value, string1, string2, childcls)
                         if string1 in MetaModel.models[string2].foreign_keys:
-                            pass
+                            attr_name = self.foreign_keys[string1]
+                            attr_obj = getattr(self, attr_name)
+                            if not childcls == value.__class__.__name__.lower():
+                                raise ValueError(f"Can't set {childcls} to a {value.__class__.__name__.lower()}")
+                            setattr(self, attr_name, value.id)
+                            
                     x = property(fget=lambda self, string1=string1, string2=string2, childcls=childcls: 
                         # func(self, string1, string2, childcls))
                         MetaModel.models[childcls].query.filter_by(**{'id':getattr(self, self.foreign_keys[string1])})[0]
                         if string1 in MetaModel.models[string2].foreign_keys else
-                        MetaModel.models[childcls].query.filter_by(**{MetaModel.models[childcls].foreign_keys[re.sub(r'(?<!^)(?=[A-Z])', '_', (str(self.__class__.__name__))).lower()+ ".id"]:self.id}))
+                        MetaModel.models[childcls].query.filter_by(**{MetaModel.models[childcls].foreign_keys[re.sub(r'(?<!^)(?=[A-Z])', '_', (str(self.__class__.__name__))).lower()+ ".id"]:self.id}),
+                        fset=fset)
                     # x = property(fget=lambda self: MetaModel.models[childcls].query.filter_by(**{attrs[attr].back_populates:self.id}))
                 else: 
                     x = property(fget=lambda self, childcls=childcls: MetaModel.models[childcls].query.filter_by(**{MetaModel.models[childcls].foreign_keys[str(self.__class__.__name__).lower()+ ".id"]:self.id}))

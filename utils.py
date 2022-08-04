@@ -211,5 +211,5 @@ class InstrumentedAttribute:
         instance.__dict__[self.name] = value
         if not inited:
             return instance        
-        instance.__class__.objects.updateOne({self.name: value}, id = instance.id)
+        instance.__class__.query.updateOne({self.name: value}, id = instance.id)
         return instance

@@ -1,7 +1,7 @@
 from db import db
 from models import User, PythonData, PythonDataAuthTokens, Project
 
-x = User.query.filter_by(admin=True)
+x = User.query.filter_by(id=2)
 
 data = PythonData.query.filter_by(id=6)[0]
 print(data.authTokens)

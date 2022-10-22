@@ -5,7 +5,7 @@ import sqlite3
 import itertools
 import sqlite3
 from tkinter.tix import COLUMN
-from utils import Blank, Field, ForeignKeyField, NewRelationship,  ForeignKey, Relationship, InstrumentedAttribute, F, Condition, InstrumentedAttributeRelationship
+from oldCode.utils import Blank, Field, ForeignKeyField, NewRelationship,  ForeignKey, Relationship, InstrumentedAttribute, F, Condition, InstrumentedAttributeRelationship
 import re
 from abc import ABC, abstractmethod
 

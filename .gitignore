@@ -4,3 +4,18 @@ employees.sql
 .venv-*
 SQL FROM DATA STORE.txt
 __pycache__/database.cpython-310.pyc
+orm/dataBaseManagement/__pycache__/dataBaseMgr.cpython-310.pyc
+orm/__pycache__/modelManagement.cpython-310.pyc
+orm/__pycache__/orm.cpython-310.pyc
+orm/dataBaseManagement/dataBaseConnections/__pycache__/sqliteConn.cpython-310.pyc
+orm/dataBaseManagement/dataBaseConnections/__pycache__/templateConnection.cpython-310.pyc
+orm/fields/__pycache__/fields.cpython-310.pyc
+__pycache__/database.cpython-310.pyc
+oldCode/__pycache__/utils.cpython-310.pyc
+sorm/__pycache__/modelManagement.cpython-310.pyc
+sorm/__pycache__/orm.cpython-310.pyc
+sorm/dataBaseManagement/__pycache__/dataBaseMgr.cpython-310.pyc
+sorm/dataBaseManagement/dataBaseConnections/__pycache__/sqliteConn.cpython-310.pyc
+sorm/dataBaseManagement/dataBaseConnections/__pycache__/templateConnection.cpython-310.pyc
+sorm/fields/__pycache__/fields.cpython-310.pyc
+__pycache__/database.cpython-310.pyc

@@ -4,7 +4,7 @@ from models import User, PythonData, PythonDataAuthTokens, Project
 x = User.query.filter_by(id=2)
 
 data = PythonData.query.filter_by(id=6)[0]
-print(data.authTokens)
+# print(data.authTokens)
 print(data.project)
 print(data.project.owner)
 data.project.owner = x[0]

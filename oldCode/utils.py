@@ -94,11 +94,12 @@ class Field:
     def __init__(self, name, data_type, primary_key=False):
         self.name = name
         self.data_type = data_type
+        # print(f"Creating field {self.name} ({self.data_type})")
         self.value = None
         self.primary_key = primary_key
     
     def setValue(self, value):
-        print(f"Setting value {value} to field {self.name}")
+        # print(f"Setting value {value} to field {self.name}")
         if self.data_type == 'int':
             return value
         else:

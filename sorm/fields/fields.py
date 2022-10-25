@@ -23,13 +23,13 @@ class ForeignKey():
         self.key = key 
     
 
-class NewRelationship():
-    def __init__(self, childcls, back_populates=None):
-        self.childcls = childcls
+class Relationship():
+    def __init__(self, related_cls_name, back_populates=None):
+        self.related_cls_name = related_cls_name
         self.back_populates = back_populates
         # self.backref_field = parentcls.__dict__[back_populates]
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.childcls} ({self.back_populates})>"   
+        return f"<{self.__class__.__name__}: {self.related_cls_name} ({self.back_populates})>"   
 
 class InstrumentedAttributeRelationship():
     def __init__(self, parentcls, back_populates):
@@ -79,29 +79,3 @@ class InstrumentedAttribute:
         instance.__class__.query.updateOne({self.name: value}, id = instance.id)
         return instance
     
-    
-class Relationship():
-    def __init__(self, parentcls, back_populates):
-        self.parentcls = parentcls
-        self.back_populates = back_populates
-        # self.backref_field = parentcls.__dict__[back_populates]
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.parentcls} ({self.back_populates})>"
-
-class ForeignKeyField(Field):
-    def __init__(self, name, data_type, back_populates):
-        super().__init__(name, data_type)
-        self.back_populates = back_populates
-        self.backref_field = None
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.name} ({self.data_type})>"
-
-    # def set_backref_field(self, backref_field):
-    #     self.backref_field = backref_field
-    #     self.backref_field.back_populates = self.back_populates
-    #     self.backref_field.backref_field = self
-    #     return self.backref_field
-    
-    def setValue(self, value):
-        return self.back_populates.objects.query(id = value)[0]   

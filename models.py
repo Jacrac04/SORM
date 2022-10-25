@@ -14,7 +14,7 @@ class PythonDataAuthTokens(db.Model):
     authToken = db.Field('authToken', data_type='varchar')
     tokenType = db.Field('tokenType', data_type='varchar')
     pythonDataId = db.ForeignKey('python_data.id')
-    pythonData = db.NewRelationship('PythonData', 'pythonDataId')
+    pythonData = db.Relationship('PythonData', 'authTokens')
 
     def __init__(self, tokenType, pythonDataId):
         self.authToken = uuidGen()
@@ -25,9 +25,9 @@ class PythonData(db.Model):
     id = db.Field('id', data_type='int', primary_key=True)
     name = db.Field('name', data_type='varchar')
     dataJson = db.Field('dataJson', data_type='varchar')
-    authTokens = db.NewRelationship('PythonDataAuthTokens', 'pythonDataId')
+    authTokens = db.Relationship('PythonDataAuthTokens', 'pythonData')
     projectId = db.ForeignKey('project.id')
-    project = db.NewRelationship('Project', "pythonData")
+    project = db.Relationship('Project', "pythonData")
     pass
 
 
@@ -37,9 +37,9 @@ class Project(db.Model):
     description = db.Field('description', data_type='varchar')
     # pythonDataId = db.ForeignKey('python_data.id')
     # backref='Project', lazy='dynamic')
-    pythonData = db.NewRelationship('PythonData', 'pythonDataId')
+    pythonData = db.Relationship('PythonData', 'project')
     ownerId = db.ForeignKey('user.id')
-    owner = db.NewRelationship('User', 'ownerId')
+    owner = db.Relationship('User', 'projects')
     pass
 
     def __init__(self, name, ownerId, description):
@@ -53,7 +53,7 @@ class User(db.Model):
     password = db.Field('password', data_type='varchar')
     name = db.Field('name', data_type='varchar')
     admin = db.Field('admin', data_type='boolean')
-    projects = db.NewRelationship('Project', 'ownerId')
+    projects = db.Relationship('Project', 'owner')
     
     def __init__(self, email, password, name, admin=False):
         self.email = email

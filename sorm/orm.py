@@ -1,5 +1,5 @@
-from .modelManagement import BaseModel, Field, ForeignKey, NewRelationship, NewBaseManager
-from .fields.fields import ForeignKeyField, Relationship 
+from .modelManagement import BaseModel, Field, ForeignKey, NewBaseManager
+from .fields.fields import Relationship 
 
 class ORM():
     def __init__(self, connectionSettings):
@@ -10,7 +10,5 @@ class ORM():
         
     def __setFields(self):
         self.Field = Field
-        self.ForeignKeyField = ForeignKeyField
         self.Relationship = Relationship
-        self.NewRelationship = NewRelationship
         self.ForeignKey = ForeignKey

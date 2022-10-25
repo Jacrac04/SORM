@@ -1,6 +1,6 @@
 from multiprocessing.dummy import Manager
 from .dataBaseManagement.dataBaseMgr import BaseManager as NewBaseManager
-from .fields.fields import Field, ForeignKey, NewRelationship, InstrumentedAttributeRelationship, InstrumentedAttribute, Relationship
+from .fields.fields import Field, ForeignKey, InstrumentedAttributeRelationship, InstrumentedAttribute, Relationship
 import re
 
 def _wrapCustomInit(baseInit, self, data):
@@ -23,52 +23,45 @@ class MetaModel(type):
         inst.table_name = name
         for attr in attrs:
             x = None
-            childcls = None
-            string1 = None
-            string2 = None
-            if (attr.startswith('_') and not attr.startswith('__init_')) or (not attr.startswith('__init_') and (not (isinstance(attrs[attr], Field) or isinstance(attrs[attr], Relationship) or isinstance(attrs[attr], NewRelationship) or isinstance(attrs[attr], ForeignKey)))):
+            related_cls_name = None
+            foreign_key = None
+            # string2 = None
+            if (attr.startswith('_') and not attr.startswith('__init_')) or (not attr.startswith('__init_') and (not (isinstance(attrs[attr], Field) or isinstance(attrs[attr], Relationship) or isinstance(attrs[attr], Relationship) or isinstance(attrs[attr], ForeignKey)))):
                 continue
             elif isinstance(attrs[attr], Field):
                 if attrs[attr].primary_key:
                     inst.primary_key = attr
                 x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type, attrs[attr].primary_key)
-            # elif isinstance(attrs[attr], Relationship):
-            #     y = re.sub(r'(?<!^)(?=[A-Z])', '_', (attrs[attr].parentcls)).lower()
-            #     z = attrs[attr].back_populates
-            #     print(attr, attrs[attr], attrs[attr].parentcls, attrs[attr].back_populates, re.sub(r'(?<!^)(?=[A-Z])', '_', (attrs[attr].parentcls)).lower())
-            #     x = property(fget=lambda self: MetaModel.models[y].query.filter_by(**{z:self.id}))
-            elif isinstance(attrs[attr], NewRelationship):
-                childcls = re.sub(r'(?<!^)(?=[A-Z])', '_', (attrs[attr].childcls)).lower()
+            elif isinstance(attrs[attr], Relationship):
+                related_cls_name = re.sub(r'(?<!^)(?=[A-Z])', '_', (attrs[attr].related_cls_name)).lower()
                 if attrs[attr].back_populates:
-                    # print(attrs[attr])
-                    string1 = re.sub(r'(?<!^)(?=[A-Z])', '_', (str(attrs[attr].childcls))).lower()+ ".id"
-                    string2 = re.sub(r'(?<!^)(?=[A-Z])', '_', (inst.__name__)).lower()
-                    # print(string1, string2)
-                    def fget(self, string1=string1, string2=string2, childcls=childcls):
-                        if string1 in MetaModel.models[string2].foreign_keys:
-                            return MetaModel.models[childcls].query.filter_by(**{'id':getattr(self, self.foreign_keys[string1])})[0]
+                    
+                    foreign_key = re.sub(r'(?<!^)(?=[A-Z])', '_', (str(attrs[attr].related_cls_name))).lower()+ ".id"
+                    # string2 = re.sub(r'(?<!^)(?=[A-Z])', '_', (inst.__name__)).lower()
+                    
+                    def fget(self, foreign_key=foreign_key, inst_table_name=inst.table_name, related_cls_name=related_cls_name,bp=attrs[attr].back_populates):
+                        if foreign_key in MetaModel.models[inst_table_name].foreign_keys:
+                            # For Child to Parent relationship
+                            id_ofRelated = getattr(self, self.foreign_keys[foreign_key]) # This gets the attribute called the result of looking foreign key in the foreign_keys dict  
+                            return MetaModel.models[related_cls_name].query.filter_by(**{'id':id_ofRelated})[0]
                         else:
-                            return MetaModel.models[childcls].query.filter_by(**{MetaModel.models[childcls].foreign_keys[re.sub(r'(?<!^)(?=[A-Z])', '_', (str(self.__class__.__name__))).lower()+ ".id"]:self.id})
-                    def fset(self, value, string1=string1, string2=string2, childcls=childcls):
-                        # print(self, value, string1, string2, childcls)
-                        if string1 in MetaModel.models[string2].foreign_keys:
-                            attr_name = self.foreign_keys[string1]
+                            # For Parent to Children relationship
+                            child_fk_name = MetaModel.models[related_cls_name].foreign_keys[re.sub(r'(?<!^)(?=[A-Z])', '_', (str(self.__class__.__name__))).lower()+ ".id"]
+                            return MetaModel.models[related_cls_name].query.filter_by(**{child_fk_name:self.id})
+                    def fset(self, value, foreign_key=foreign_key, inst_table_name=inst.table_name, related_cls_name=related_cls_name):
+                        if foreign_key in MetaModel.models[inst_table_name].foreign_keys:
+                            # For Child to Parent relationship
+                            attr_name = self.foreign_keys[foreign_key]
                             attr_obj = getattr(self, attr_name)
-                            if not childcls == value.__class__.__name__.lower():
-                                raise ValueError(f"Can't set {childcls} to a {value.__class__.__name__.lower()}")
-                            setattr(self, attr_name, value.id)
+                            if not related_cls_name == value.__class__.__name__.lower():
+                                raise ValueError(f"Can't set {related_cls_name} to a {value.__class__.__name__.lower()}")
+                            setattr(self, attr_name, value.id)                                                  
                             
-                    x = property(fget=lambda self, string1=string1, string2=string2, childcls=childcls: 
-                        # func(self, string1, string2, childcls))
-                        MetaModel.models[childcls].query.filter_by(**{'id':getattr(self, self.foreign_keys[string1])})[0]
-                        if string1 in MetaModel.models[string2].foreign_keys else
-                        MetaModel.models[childcls].query.filter_by(**{MetaModel.models[childcls].foreign_keys[re.sub(r'(?<!^)(?=[A-Z])', '_', (str(self.__class__.__name__))).lower()+ ".id"]:self.id}),
-                        fset=fset)
-                    # x = property(fget=lambda self: MetaModel.models[childcls].query.filter_by(**{attrs[attr].back_populates:self.id}))
+                    x = property(fget=fget, fset=fset)
                 else: 
-                    x = property(fget=lambda self, childcls=childcls: MetaModel.models[childcls].query.filter_by(**{MetaModel.models[childcls].foreign_keys[str(self.__class__.__name__).lower()+ ".id"]:self.id}))
+                    x = property(fget=lambda self, related_cls_name=related_cls_name: MetaModel.models[related_cls_name].query.filter_by(**{MetaModel.models[related_cls_name].foreign_keys[str(self.__class__.__name__).lower()+ ".id"]:self.id}))
             elif isinstance(attrs[attr], ForeignKey):
-                x = InstrumentedAttribute(attr, 'int', False)
+                x = InstrumentedAttribute(attr, 'int', False) # TODO: Change so when the foreign key is updated it will update the relationship
                 inst.foreign_keys[attrs[attr].key] = attr
                     
                     

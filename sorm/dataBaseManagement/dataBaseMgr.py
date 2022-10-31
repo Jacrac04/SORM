@@ -1,5 +1,5 @@
-from .dataBaseConnections.templateConnection import DataBaseConnection
-from .dataBaseConnections.sqliteConn import SQLITEBaseConnection
+from .databaseConnections.templateConnection import DataBaseConnection
+from .databaseConnections.sqliteConn import SQLITEBaseConnection
 from oldCode.utils import Condition, Blank
 import re
     
@@ -7,6 +7,27 @@ class Blank2():
     pass
     
 class BaseManager:
+    """BaseManager class provides an interface to interact with the database.
+    
+    Class attributes:
+        - connection: a DataBaseConnection object. This handles the actual SQL (or similar) commands.
+        - connection_options: a dictionary of Connection options.  
+    
+    Class Methods:
+        - set_connection: instantiates the connection to the database.
+    
+    Methods:
+        - get_fields: returns a list of the fields in the table.
+        - filter_by: returns a list of model objects that match the conditions.
+        - select: returns a list of model objects that match the conditions.
+        - bulk_insert: inserts a list of entries into the database.
+        - insert: inserts an entry into the database.
+        - update: updates entries that match a condition in the database .
+        - updateOne: updates one entry in the database.
+        - delete: deletes entries that match a condition from the database.
+        - newRecord: creates a new entry in the database.
+
+    """
     connection = DataBaseConnection
     connection_options = {'SQLITE': SQLITEBaseConnection}
     

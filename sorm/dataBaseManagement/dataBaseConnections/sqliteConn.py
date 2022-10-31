@@ -5,6 +5,7 @@ class SQLITEBaseConnection(DataBaseConnection):
     @classmethod
     def set_connection(cls, connectionSettings: dict) -> None:    
         cls._connectionSettings = connectionSettings
+        cls._shouldCommit = True if 'commit' not in connectionSettings else connectionSettings['commit']
         cls._connection = sqlite3.connect(connectionSettings['databaseURI'], isolation_level=connectionSettings['isolation_level'])
         cls._cursor = cls._connection.cursor()
         cls._cursor.execute("PRAGMA foreign_keys = ON")
@@ -13,6 +14,11 @@ class SQLITEBaseConnection(DataBaseConnection):
     @classmethod
     def _get_cursor(cls):
         return cls._cursor
+
+    @classmethod
+    def _commit(cls):
+        if cls._shouldCommit:
+            cls._connection.commit()
     
     @classmethod
     def get_fields(cls, table_name):
@@ -38,11 +44,13 @@ class SQLITEBaseConnection(DataBaseConnection):
     def insert(cls, table_name, **row_data):
         query = f"INSERT INTO {table_name} ({', '.join(row_data.keys())}) VALUES ({', '.join(['?'] * len(row_data))})"
         cls._cursor.execute(query, tuple(row_data.values()))
+        cls._commit()
         
     @classmethod
     def update(cls, table_name, dataToChange: dict, condition) -> None:
         query = f"UPDATE {table_name} SET {', '.join([f'{field} = ?' for field in dataToChange.keys()])} WHERE {condition.sql_format}"
         cls._cursor.execute(query, tuple(dataToChange.values()) + tuple(condition.query_vars))
+        cls._commit()
     
     @classmethod
     def get_last_row_id(cls):

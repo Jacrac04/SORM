@@ -19,3 +19,16 @@ sorm/dataBaseManagement/dataBaseConnections/__pycache__/sqliteConn.cpython-310.p
 sorm/dataBaseManagement/dataBaseConnections/__pycache__/templateConnection.cpython-310.pyc
 sorm/fields/__pycache__/fields.cpython-310.pyc
 __pycache__/database.cpython-310.pyc
+tests/unit/__pycache__/test_databaseMangement_utils.cpython-310-pytest-7.2.0.pyc
+tests/unit/__pycache__/test_sormIntergration.cpython-310-pytest-7.2.0.pyc
+tests/unit/__pycache__/test_sql_connections.cpython-310-pytest-7.2.0.pyc
+tests/__pycache__/__init__.cpython-310.pyc
+tests/__pycache__/confIntergrationTests.cpython-310.pyc
+tests/__pycache__/conftest.cpython-310-pytest-7.2.0.pyc
+tests/__pycache__/testModels.cpython-310.pyc
+sorm/__pycache__/*
+.vscode/settings.json
+sorm/databaseManagement/__pycache__/*
+tests/functional/__pycache__/test_sormIntergration.cpython-310-pytest-7.2.0.pyc
+tests/unit/__pycache__/test_databaseManagement_utils.cpython-310-pytest-7.2.0.pyc
+tests/unit/__pycache__/test_Model_creation.cpython-310-pytest-7.2.0.pyc

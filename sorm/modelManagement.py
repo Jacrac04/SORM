@@ -1,15 +1,39 @@
-from multiprocessing.dummy import Manager
-from .dataBaseManagement.dataBaseMgr import BaseManager as NewBaseManager
-from .fields.fields import Field, ForeignKey, InstrumentedAttributeRelationship, InstrumentedAttribute, Relationship
+from .databaseManagement.dataBaseMgr import BaseManager as NewBaseManager
+from .fields.fields import Field, ForeignKey, InstrumentedAttribute, Relationship
 import re
 
 def _wrapCustomInit(baseInit, self, data):
+    """Wraps the __init__ method of a Model class to allow for custom, user defined __init__ methods.
+
+    Args:
+        - baseInit: The __init__ method of the Model class.
+        - self: The instance of the Model class.
+        - data: The data to be passed to the __init__ method.
+
+    Returns:
+        - The result of the __init__ method and extra bits (an object).
+    """
     result = baseInit(*self, **data)
     pk = self[0].__class__.primary_key
     self[0].__dict__[pk] = self[0].__class__.query.newRecord(data)
     return result
 
 class MetaModel(type):
+    """Metaclass for the Model class.
+    
+    This is used to convert the user defined model class into a class that provides an interface to the database. It allows the model class to create new records as well as query the database for existing records.
+    
+    Class Attributes:
+        - manager_class: The class that will be used to manage the database. Every model will have an instance of it.
+        - models: A dictionary of all the models that have been created. The key is the name of the model and the value is the model class.
+    
+    Methods:
+        - __new__: This is called when a new model class is created. It will create a new instance of the manager class and add it to the class as an attribute. It will also add the attributes to the class that will be used to query the database.
+        - _get_manager: Returns an instance of the manager class. It takes a Model class as an argument. 
+    
+    Properties:
+        - query: Returns an instance of the manager class. It takes a Model class as an argument. This is equivalent to a class method on the Model class.
+    """
     manager_class = NewBaseManager
     models = {}
 
@@ -17,7 +41,7 @@ class MetaModel(type):
 
     def __new__(cls, name, bases, attrs):
         inst:BaseModel = super().__new__(cls, name, bases, attrs)  # type: ignore
-        inst.manager = cls._get_manager(cls)
+        inst.manager = cls.manager_class(inst)
         inst.foreign_keys = {}
         name = re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
         inst.table_name = name
@@ -25,7 +49,6 @@ class MetaModel(type):
             x = None
             related_cls_name = None
             foreign_key = None
-            # string2 = None
             if (attr.startswith('_') and not attr.startswith('__init_')) or (not attr.startswith('__init_') and (not (isinstance(attrs[attr], Field) or isinstance(attrs[attr], Relationship) or isinstance(attrs[attr], Relationship) or isinstance(attrs[attr], ForeignKey)))):
                 continue
             elif isinstance(attrs[attr], Field):
@@ -34,11 +57,8 @@ class MetaModel(type):
                 x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type, attrs[attr].primary_key)
             elif isinstance(attrs[attr], Relationship):
                 related_cls_name = re.sub(r'(?<!^)(?=[A-Z])', '_', (attrs[attr].related_cls_name)).lower()
-                if attrs[attr].back_populates:
-                    
-                    foreign_key = re.sub(r'(?<!^)(?=[A-Z])', '_', (str(attrs[attr].related_cls_name))).lower()+ ".id"
-                    # string2 = re.sub(r'(?<!^)(?=[A-Z])', '_', (inst.__name__)).lower()
-                    
+                if attrs[attr].back_populates:                    
+                    foreign_key = re.sub(r'(?<!^)(?=[A-Z])', '_', (str(attrs[attr].related_cls_name))).lower()+ ".id"                    
                     def fget(self, foreign_key=foreign_key, inst_table_name=inst.table_name, related_cls_name=related_cls_name,bp=attrs[attr].back_populates):
                         if foreign_key in MetaModel.models[inst_table_name].foreign_keys:
                             # For Child to Parent relationship
@@ -61,7 +81,7 @@ class MetaModel(type):
                 else: 
                     x = property(fget=lambda self, related_cls_name=related_cls_name: MetaModel.models[related_cls_name].query.filter_by(**{MetaModel.models[related_cls_name].foreign_keys[str(self.__class__.__name__).lower()+ ".id"]:self.id}))
             elif isinstance(attrs[attr], ForeignKey):
-                x = InstrumentedAttribute(attr, 'int', False) # TODO: Change so when the foreign key is updated it will update the relationship
+                x = InstrumentedAttribute(attr, 'int', is_foreign_key=True) # TODO: Change so when the foreign key is updated it will update the relationship
                 inst.foreign_keys[attrs[attr].key] = attr
                     
                     
@@ -76,15 +96,34 @@ class MetaModel(type):
         MetaModel.models[name] = inst
         return inst
     
-    def _get_manager(cls):
-        return cls.manager_class(model_class=cls)
 
+    # This is equivalent to a class method on the Model class
     @property
-    def query(cls):
-        return cls._get_manager()
+    def query(model_cls):
+        return model_cls.manager # type: ignore
+
 
 
 class BaseModel(metaclass=MetaModel):
+    """This is the base model that al user defined models will inherit from
+    
+    Class Attributes:
+        - table_name: The name of the table in the database
+        - manager: The manager that will be used to provide the query interface
+        - foreign_keys: A dictionary of the foreign keys in the model. This is used in the relationship property.
+        - primary_key: The name of the primary key of the model
+        - __name__: The name of the model
+    
+    Attributes:
+        - new_record: A boolean that is True if the record is new and False if it is not. This is used to determine if the record should be inserted into teh database.
+        - **kwargs: The keyword arguments that are passed into the model should be the attributes of the model.
+    
+    Class Methods:
+        - get_felids: Returns a list of the fields of the model
+        
+    Methods:
+        - __repr__: Returns a string representation of the model. Dev use only
+    """
     table_name:str
     manager:NewBaseManager
     foreign_keys:dict
@@ -93,6 +132,14 @@ class BaseModel(metaclass=MetaModel):
     
 
     def __init__(self, new_record=True, **data):
+        """This is the __init__ for the model
+        
+        This is the default __init__ for the model if one hasn't been user defined.
+        
+        Args:
+            - new_record: A boolean that is True if the record is new and False if it is not. This is used to determine if the record should be inserted into the database.
+            - **kwargs: The keyword arguments that are passed into the model should be the attributes of the model.
+        """
         self.initialized = False
         if new_record:
             # id = self.__class__.query.newRecord(data)
@@ -110,4 +157,4 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def get_fields(cls):
-        return cls._get_manager().get_fields()
+        return cls.manager.get_fields()

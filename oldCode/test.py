@@ -39,3 +39,22 @@ newEmp = Employee(first_name="Yannick", last_name="KIKI", salary=1320000)
 print(newEmp.id, newEmp.first_name, newEmp.last_name, newEmp.salary, newEmp.ref)
 
 pass
+
+
+# class META(type):
+#     def __new__(cls, name, bases, attrs):
+#         print("Creating class: ", name)
+#         return super().__new__(cls, name, bases, attrs)
+    
+#     @property
+#     def test(self):
+#         print("test")
+        
+# class A(metaclass=META):
+#     def __init__(self):
+#         print("A init")
+        
+    
+
+# a = A()
+# A.test

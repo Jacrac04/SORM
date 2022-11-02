@@ -1,6 +1,6 @@
 from .databaseConnections.templateConnection import DataBaseConnection
 from .databaseConnections.sqliteConn import SQLITEBaseConnection
-from oldCode.utils import Condition, Blank
+from .utils import Condition, Blank
 import re
     
 class Blank2():

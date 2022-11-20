@@ -41,3 +41,6 @@ models.py
 intergrateWithServerTests.py
 test.db
 db.py
+.ignore/*
+dist/*
+SORM.egg-info/*

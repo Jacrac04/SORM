@@ -103,7 +103,7 @@ class InstrumentedAttribute:
         try:
             return instance.__dict__[self.name]
         except KeyError:
-            print(f"KeyError: {self.name} not found in {instance.__dict__}")
+            raise AttributeError(f"'{owner.__name__}' object has no attribute '{self.name}'")
             return None
     
     def __set__(self, instance, value):

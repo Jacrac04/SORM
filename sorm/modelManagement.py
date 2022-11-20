@@ -13,8 +13,13 @@ def _wrapCustomInit(baseInit, self, data):
     Returns:
         - The result of the __init__ method and extra bits (an object).
     """
+    print("modelManagement._wrapCustomInit", baseInit, self, data)
     result = baseInit(*self, **data)
     pk = self[0].__class__.primary_key
+    data = {}
+    for attr in self[0].__class__.fields:
+        if attr != pk:
+            data[attr] = getattr(self[0], attr)
     self[0].__dict__[pk] = self[0].__class__.query.newRecord(data)
     return result
 
@@ -43,6 +48,7 @@ class MetaModel(type):
         inst:BaseModel = super().__new__(cls, name, bases, attrs)  # type: ignore
         inst.manager = cls.manager_class(inst)
         inst.foreign_keys = {}
+        inst.fields = [] 
         name = re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
         inst.table_name = name
         for attr in attrs:
@@ -52,6 +58,7 @@ class MetaModel(type):
             if (attr.startswith('_') and not attr.startswith('__init_')) or (not attr.startswith('__init_') and (not (isinstance(attrs[attr], Field) or isinstance(attrs[attr], Relationship) or isinstance(attrs[attr], Relationship) or isinstance(attrs[attr], ForeignKey)))):
                 continue
             elif isinstance(attrs[attr], Field):
+                inst.fields.append(attr)
                 if attrs[attr].primary_key:
                     inst.primary_key = attr
                 x = InstrumentedAttribute(attrs[attr].name, attrs[attr].data_type, attrs[attr].primary_key)
@@ -81,16 +88,17 @@ class MetaModel(type):
                 else: 
                     x = property(fget=lambda self, related_cls_name=related_cls_name: MetaModel.models[related_cls_name].query.filter_by(**{MetaModel.models[related_cls_name].foreign_keys[str(self.__class__.__name__).lower()+ ".id"]:self.id}))
             elif isinstance(attrs[attr], ForeignKey):
+                inst.fields.append(attr)
                 x = InstrumentedAttribute(attr, 'int', is_foreign_key=True) # TODO: Change so when the foreign key is updated it will update the relationship
                 inst.foreign_keys[attrs[attr].key] = attr
                     
                     
             elif attr == '__init__':
                 if name != 'base_model':
-                    x = lambda *args, **kwargs: _wrapCustomInit(attrs[attr], args, kwargs)
+                    print('yeet', name, attr, attrs[attr])
+                    x = lambda *args, attr=attr, **kwargs: _wrapCustomInit(attrs[attr], args, kwargs)
                 else:
                     continue
-            setattr(inst, attr, x)
             # print(string1, string2, childcls, x)
             pass
         MetaModel.models[name] = inst
@@ -128,6 +136,7 @@ class BaseModel(metaclass=MetaModel):
     manager:NewBaseManager
     foreign_keys:dict
     primary_key:str
+    fields:list
     __name__:str 
     
 

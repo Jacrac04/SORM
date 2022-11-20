@@ -9,10 +9,11 @@ def test_sqlite_connection():
     from sorm.databaseManagement.databaseConnections.sqliteConn import SQLITEBaseConnection
     SETTINGS = {
                 'type': 'SQLITE',
-                'databaseURI': 'dev.sqlite',
+                'databaseURI': 'testing.sqlite',
                 'isolation_level': 'DEFERRED'
             }
     conn = SQLITEBaseConnection()
+    conn.set_connection(SETTINGS)
     assert conn is not None
  
 @pytest.mark.dependency(depends=["test_sqlite_connection"])   

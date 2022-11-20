@@ -1,0 +1,21 @@
+[project]
+name = "SORM"
+version = "0.0.1"
+authors = [
+  { name="Jacrac04", email="jacrac04@gmail.com" },
+]
+description = "A Simple Object Relational Mapper"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Jacrac04/SORM"
+"Bug Tracker" = "https://github.com/Jacrac04/SORM/issues"
+
+[project.dependencies]
+"re" = "*"

@@ -32,3 +32,11 @@ sorm/databaseManagement/__pycache__/*
 tests/functional/__pycache__/test_sormIntergration.cpython-310-pytest-7.2.0.pyc
 tests/unit/__pycache__/test_databaseManagement_utils.cpython-310-pytest-7.2.0.pyc
 tests/unit/__pycache__/test_Model_creation.cpython-310-pytest-7.2.0.pyc
+intergrateWithServerTests.py
+dev.sqlite
+oldCode/*
+tests/unit/__pycache__/test_sormIntergration.cpython-310-pytest-7.2.0.pyc
+.pytest_cache/*
+models.py
+intergrateWithServerTests.py
+test.db

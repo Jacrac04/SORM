@@ -99,7 +99,7 @@ class MetaModel(type):
                     x = lambda *args, attr=attr, **kwargs: _wrapCustomInit(attrs[attr], args, kwargs)
                 else:
                     continue
-            # print(string1, string2, childcls, x)
+            setattr(inst, attr, x)
             pass
         MetaModel.models[name] = inst
         return inst

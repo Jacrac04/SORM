@@ -95,7 +95,6 @@ class MetaModel(type):
                     
             elif attr == '__init__':
                 if name != 'base_model':
-                    print('yeet', name, attr, attrs[attr])
                     x = lambda *args, attr=attr, **kwargs: _wrapCustomInit(attrs[attr], args, kwargs)
                 else:
                     continue

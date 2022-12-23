@@ -166,3 +166,14 @@ class BaseModel(metaclass=MetaModel):
     @classmethod
     def get_fields(cls):
         return cls.manager.get_fields()
+    
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, self.__class__):
+            return False
+        
+        # Check if the primary keys are equal
+        pk = self.__class__.primary_key
+        if getattr(self, pk) == getattr(__o, pk):
+            return True
+        else:
+            return False

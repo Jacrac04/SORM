@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SORM"
-version = "0.0.3"
+version = "0.0.4"
 authors = [
   { name="Jacrac04", email="jacrac04@gmail.com" },
 ]

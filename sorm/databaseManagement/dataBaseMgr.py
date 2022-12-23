@@ -28,7 +28,7 @@ class BaseManager:
         - newRecord: creates a new entry in the database.
 
     """
-    connection = DataBaseConnection
+    connection = DataBaseConnection # Refactor to a property that generates a new connection for request. 
     connection_options = {'SQLITE': SQLITEBaseConnection}
     
     @classmethod

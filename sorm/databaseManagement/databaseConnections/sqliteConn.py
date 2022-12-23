@@ -6,7 +6,7 @@ class SQLITEBaseConnection(DataBaseConnection):
     def set_connection(cls, connectionSettings: dict) -> None:    
         cls._connectionSettings = connectionSettings
         cls._shouldCommit = True if 'commit' not in connectionSettings else connectionSettings['commit']
-        cls._connection = sqlite3.connect(connectionSettings['databaseURI'], isolation_level=connectionSettings['isolation_level'])
+        cls._connection = sqlite3.connect(connectionSettings['databaseURI'], isolation_level=connectionSettings['isolation_level'], check_same_thread=False) # check_same_thread=False is a temp fix for SQLite objects created in a thread can only be used in that same thread
         cls._cursor = cls._connection.cursor()
         cls._cursor.execute("PRAGMA foreign_keys = ON")
         cls._connection.commit()

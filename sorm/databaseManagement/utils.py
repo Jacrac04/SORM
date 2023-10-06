@@ -86,3 +86,10 @@ class Condition:
         condition_resulting.sql_format = f"({self.sql_format}) {logical_operator} ({other.sql_format})"
         condition_resulting.query_vars = self.query_vars + other.query_vars
         return condition_resulting
+    
+    
+class SORMArray(list):
+    def first(self):
+        if len(self) == 0:
+            return None
+        return self[0]

@@ -55,3 +55,9 @@ class SQLITEBaseConnection(DataBaseConnection):
     @classmethod
     def get_last_row_id(cls):
         return cls._cursor.lastrowid
+    
+    @classmethod
+    def delete(cls, table_name: str, condition) -> None:
+        query = f"DELETE FROM {table_name} WHERE {condition.sql_format}"
+        cls._cursor.execute(query, condition.query_vars)
+        cls._commit()

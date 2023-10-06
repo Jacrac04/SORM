@@ -6,7 +6,7 @@ import pytest
 
 @pytest.mark.dependency()
 def test_user_query(userModel):
-    x = userModel.query.filter_by(id=2)[0]
+    x = userModel.query.filter_by(id=2).first()
     assert x.id == 2
     assert x.email == 'test@test.com'
     assert x.name == 'Test User'
@@ -14,7 +14,7 @@ def test_user_query(userModel):
 
 @pytest.mark.dependency()
 def test_project_query(projectModel):
-    project = projectModel.query.filter_by(id=1)[0]
+    project = projectModel.query.filter_by(id=1).first()
     assert project.id == 1
     assert project.name == 'Test Project'
     assert project.ownerId == 2
@@ -22,7 +22,7 @@ def test_project_query(projectModel):
 
 @pytest.mark.dependency()
 def test_data_query(dataModel):
-    data = dataModel.query.filter_by(id=1)[0]
+    data = dataModel.query.filter_by(id=1).first()
     assert data.id == 1
     assert data.name == 'Test Data'
     assert data.dataJson == '{"test": "test"}'
@@ -30,7 +30,7 @@ def test_data_query(dataModel):
 
 @pytest.mark.dependency()
 def test_authToken_query(pythonDataAuthTokensModel):
-    authToken = pythonDataAuthTokensModel.query.filter_by(id=1)[0]
+    authToken = pythonDataAuthTokensModel.query.filter_by(id=1).first()
     assert authToken.id == 1
     assert authToken.authToken == 'testAuthToken'
     assert authToken.tokenType == 'r'
@@ -38,15 +38,15 @@ def test_authToken_query(pythonDataAuthTokensModel):
 
 @pytest.mark.dependency(depends=["test_user_query", "test_project_query"])
 def test_user_to_project_relationship(projectModel):
-    project = projectModel.query.filter_by(id=1)[0]
+    project = projectModel.query.filter_by(id=1).first()
     assert project.owner.id == 2
 
 @pytest.mark.dependency(depends=["test_project_query", "test_data_query"])
 def test_project_to_data_relationship(dataModel):
-    data = dataModel.query.filter_by(id=1)[0]
+    data = dataModel.query.filter_by(id=1).first()
     assert data.project.id == 1
 
 @pytest.mark.dependency(depends=["test_data_query", "test_authToken_query"])   
 def test_data_to_authToken_relationship(pythonDataAuthTokensModel):
-    authToken = pythonDataAuthTokensModel.query.filter_by(id=1)[0]
+    authToken = pythonDataAuthTokensModel.query.filter_by(id=1).first()
     assert authToken.pythonData.id == 1

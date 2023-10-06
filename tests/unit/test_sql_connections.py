@@ -23,10 +23,14 @@ def test_sqlite_select(sqlConnection):
     resp = list(resp)
     assert resp == [(1, 'Test 1', 1), (2, 'Test 2', 2)]
     
+    
+    
     resp = sqlConnection.select('test_sql_database', 'name')
     assert resp is not None
     resp = list(resp)
     assert resp == [('Test 1',), ('Test 2',)]
+    
+    
     
     from sorm.databaseManagement.utils import Condition
     resp = sqlConnection.select('test_sql_database', condition=Condition(id=1))

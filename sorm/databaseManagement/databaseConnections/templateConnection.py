@@ -62,3 +62,10 @@ class DataBaseConnection(ABC):
     def get_last_row_id(cls:object) -> int:
         """ This method returns the id of the last row inserted into the database."""
         raise NotImplementedError
+    
+    @classmethod
+    @abstractmethod
+    def delete(cls:object, table_name:str, condition:Condition) -> None:
+        """ This method deletes rows in the database where the condition is met.
+        It takes the table name and a Condition object."""
+        raise NotImplementedError
